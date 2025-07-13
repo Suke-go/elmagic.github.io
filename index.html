@@ -1,0 +1,888 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>未知の解放-魔術された天球の音楽- | Cosmic Sonification</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Noto Sans JP', sans-serif;
+            background: #000;
+            color: #fff;
+            overflow-x: hidden;
+            cursor: none;
+        }
+
+        /* Custom Cursor */
+        .cursor {
+            width: 20px;
+            height: 20px;
+            border: 2px solid rgba(255, 255, 255, 0.5);
+            border-radius: 50%;
+            position: fixed;
+            pointer-events: none;
+            z-index: 9999;
+            transition: transform 0.1s ease;
+            mix-blend-mode: difference;
+        }
+
+        .cursor-follower {
+            width: 40px;
+            height: 40px;
+            border: 1px solid rgba(255, 255, 255, 0.2);
+            border-radius: 50%;
+            position: fixed;
+            pointer-events: none;
+            z-index: 9998;
+            transition: transform 0.3s ease;
+        }
+
+        /* Canvas Background */
+        #cosmicCanvas {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            z-index: 1;
+        }
+
+        /* Water Ripple Effect */
+        .ripple {
+            position: absolute;
+            border: 1px solid rgba(255, 255, 255, 0.3);
+            border-radius: 50%;
+            transform: scale(0);
+            animation: ripple-animation 4s ease-out;
+            pointer-events: none;
+        }
+
+        @keyframes ripple-animation {
+            to {
+                transform: scale(10);
+                opacity: 0;
+            }
+        }
+
+        /* Content Container */
+        .container {
+            position: relative;
+            z-index: 2;
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 0 20px;
+        }
+
+        /* Navigation */
+        nav {
+            position: fixed;
+            top: 0;
+            width: 100%;
+            padding: 20px 40px;
+            z-index: 100;
+            backdrop-filter: blur(10px);
+            background: rgba(0, 0, 0, 0.3);
+            transition: all 0.3s ease;
+        }
+
+        nav.scrolled {
+            padding: 15px 40px;
+            background: rgba(0, 0, 0, 0.8);
+        }
+
+        nav ul {
+            list-style: none;
+            display: flex;
+            justify-content: center;
+            gap: 30px;
+            flex-wrap: wrap;
+        }
+
+        nav a {
+            color: #fff;
+            text-decoration: none;
+            font-size: 14px;
+            letter-spacing: 2px;
+            transition: all 0.3s ease;
+            position: relative;
+        }
+
+        nav a::after {
+            content: '';
+            position: absolute;
+            bottom: -5px;
+            left: 0;
+            width: 0;
+            height: 1px;
+            background: #fff;
+            transition: width 0.3s ease;
+        }
+
+        nav a:hover::after {
+            width: 100%;
+        }
+
+        /* Sections */
+        section {
+            min-height: 100vh;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            padding: 80px 0;
+            position: relative;
+        }
+
+        /* Hero Section */
+        .hero {
+            text-align: center;
+            position: relative;
+        }
+
+        .hero h1 {
+            font-size: clamp(24px, 5vw, 48px);
+            font-weight: 300;
+            letter-spacing: 8px;
+            margin-bottom: 20px;
+            opacity: 0;
+            transform: translateY(30px);
+            animation: fadeInUp 1.5s ease forwards;
+        }
+
+        .hero .subtitle {
+            font-size: clamp(14px, 2vw, 20px);
+            letter-spacing: 4px;
+            opacity: 0;
+            transform: translateY(30px);
+            animation: fadeInUp 1.5s ease 0.3s forwards;
+            margin-bottom: 10px; /* サブタイトル間のマージンを調整 */
+        }
+        
+        .hero .subtitle.second {
+            animation-delay: 0.6s; /* 2つ目のサブタイトルのアニメーションを遅らせる */
+            margin-bottom: 40px;
+        }
+
+        @keyframes fadeInUp {
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        /* Glowing Orb */
+        .orb {
+            width: 200px;
+            height: 200px;
+            background: radial-gradient(circle, rgba(255, 255, 255, 0.3), transparent);
+            border-radius: 50%;
+            position: absolute;
+            filter: blur(40px);
+            animation: float 6s ease-in-out infinite;
+        }
+
+        @keyframes float {
+            0%, 100% { transform: translateY(0) scale(1); }
+            50% { transform: translateY(-20px) scale(1.1); }
+        }
+
+        /* Content Sections */
+        .content-section {
+            background: rgba(0, 0, 0, 0.6);
+            backdrop-filter: blur(20px);
+            padding: 60px 40px;
+            border-radius: 20px;
+            margin: 40px 0;
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            opacity: 0;
+            transform: translateY(50px);
+            transition: all 0.8s ease;
+        }
+
+        .content-section.visible {
+            opacity: 1;
+            transform: translateY(0);
+        }
+
+        .content-section h2 {
+            font-size: clamp(24px, 4vw, 36px);
+            font-weight: 300;
+            letter-spacing: 4px;
+            margin-bottom: 30px;
+            text-align: center;
+        }
+
+        .content-section p {
+            line-height: 1.8;
+            font-size: 16px;
+            margin-bottom: 20px;
+            opacity: 0.9;
+        }
+
+        /* Exhibition Info Grid */
+        .info-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+            gap: 30px;
+            margin-top: 40px;
+        }
+
+        .info-card {
+            padding: 30px;
+            background: rgba(255, 255, 255, 0.05);
+            border-radius: 15px;
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            transition: all 0.3s ease;
+        }
+
+        .info-card:hover {
+            transform: translateY(-5px);
+            background: rgba(255, 255, 255, 0.08);
+            box-shadow: 0 10px 30px rgba(255, 255, 255, 0.1);
+        }
+
+        /* Links Section */
+        .links {
+            display: flex;
+            justify-content: center;
+            gap: 30px;
+            margin-top: 40px;
+            flex-wrap: wrap;
+        }
+
+        .link-button {
+            padding: 12px 30px;
+            background: transparent;
+            border: 1px solid rgba(255, 255, 255, 0.5);
+            color: #fff;
+            text-decoration: none;
+            border-radius: 30px;
+            transition: all 0.3s ease;
+            letter-spacing: 2px;
+        }
+
+        .link-button:hover {
+            background: rgba(255, 255, 255, 0.1);
+            transform: scale(1.05);
+            box-shadow: 0 5px 20px rgba(255, 255, 255, 0.3);
+        }
+
+        /* Responsive */
+        @media (max-width: 768px) {
+            nav ul {
+                gap: 15px;
+            }
+            
+            nav a {
+                font-size: 12px;
+            }
+            
+            .content-section {
+                padding: 40px 20px;
+            }
+            
+            .cursor, .cursor-follower {
+                display: none;
+            }
+            
+            body {
+                cursor: auto;
+            }
+        }
+
+        /* Loading Screen */
+        .loader {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: #000;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            z-index: 1000;
+            transition: opacity 1s ease;
+        }
+
+        .loader.hidden {
+            opacity: 0;
+            pointer-events: none;
+        }
+
+        .loader-poem {
+            max-width: 600px;
+            text-align: center;
+            margin-bottom: 40px;
+            padding: 0 20px;
+        }
+
+        .loader-poem p {
+            font-size: 18px;
+            line-height: 1.8;
+            letter-spacing: 2px;
+            opacity: 0;
+            animation: fadeInPoem 1s ease forwards;
+            font-style: italic;
+            color: rgba(255, 255, 255, 0.8);
+        }
+
+        .loader-poem p:nth-child(2) { animation-delay: 0.5s; }
+        .loader-poem p:nth-child(3) { animation-delay: 1s; }
+
+        @keyframes fadeInPoem {
+            to { opacity: 1; }
+        }
+
+        .loader-text {
+            font-size: 24px;
+            letter-spacing: 8px;
+            opacity: 0;
+            animation: pulse 2s ease-in-out infinite;
+            animation-delay: 1.5s;
+        }
+
+        .sound-notice {
+            position: absolute;
+            bottom: 40px;
+            font-size: 14px;
+            letter-spacing: 2px;
+            opacity: 0;
+            animation: fadeInPoem 1s ease 2s forwards;
+            color: rgba(255, 255, 255, 0.6);
+        }
+
+        @keyframes pulse {
+            0%, 100% { opacity: 0.3; }
+            50% { opacity: 1; }
+        }
+
+        /* Witch Whispers */
+        .witch-whispers {
+            margin-top: 60px;
+        }
+
+        .whisper-container {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+            gap: 30px;
+            margin-top: 40px;
+        }
+
+        .whisper-card {
+            padding: 30px;
+            background: rgba(255, 255, 255, 0.03);
+            border-radius: 15px;
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            position: relative;
+            overflow: hidden;
+            transition: all 0.3s ease;
+        }
+
+        .whisper-card::before {
+            content: '✦';
+            position: absolute;
+            top: 15px;
+            right: 15px;
+            font-size: 20px;
+            opacity: 0.3;
+        }
+
+        .whisper-card:hover {
+            transform: translateY(-5px);
+            background: rgba(255, 255, 255, 0.05);
+            border-color: rgba(255, 255, 255, 0.2);
+        }
+
+        .whisper-text {
+            font-size: 16px;
+            line-height: 1.8;
+            font-style: italic;
+            color: rgba(255, 255, 255, 0.9);
+        }
+
+        .whisper-date {
+            margin-top: 15px;
+            font-size: 12px;
+            color: rgba(255, 255, 255, 0.5);
+            letter-spacing: 2px;
+        }
+
+        /* Sound Control */
+        .sound-control {
+            position: fixed;
+            bottom: 30px;
+            right: 30px;
+            z-index: 100;
+            background: rgba(0, 0, 0, 0.6);
+            backdrop-filter: blur(10px);
+            border: 1px solid rgba(255, 255, 255, 0.2);
+            border-radius: 50%;
+            width: 50px;
+            height: 50px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            cursor: pointer;
+            transition: all 0.3s ease;
+        }
+
+        .sound-control:hover {
+            transform: scale(1.1);
+            background: rgba(255, 255, 255, 0.1);
+        }
+
+        .sound-control svg {
+            width: 24px;
+            height: 24px;
+            fill: #fff;
+        }
+
+        /* Footer Copyright */
+        footer {
+            text-align: center;
+            padding: 40px 20px;
+            font-size: 14px;
+            color: rgba(255, 255, 255, 0.4);
+            letter-spacing: 2px;
+        }
+    </style>
+</head>
+<body>
+    <div class="loader" id="loader">
+        <div class="loader-poem">
+            <p>In the silence between stars,</p>
+            <p>The cosmos whispers ancient melodies</p>
+            <p>Listen to the music of the spheres...</p>
+        </div>
+        <div class="loader-text">LOADING...</div>
+        <div class="sound-notice">※ このサイトでは環境音が流れます</div>
+    </div>
+
+    <div class="cursor"></div>
+    <div class="cursor-follower"></div>
+
+    <canvas id="cosmicCanvas"></canvas>
+
+    <nav id="navbar">
+        <ul>
+            <li><a href="#home">HOME</a></li>
+            <li><a href="#about">ABOUT</a></li>
+            <li><a href="#exhibition">EXHIBITION</a></li>
+            <li><a href="#process">PROCESS</a></li>
+            <li><a href="#whispers">WHISPERS</a></li>
+            <li><a href="#artist">ARTIST</a></li>
+            <li><a href="#links">LINKS</a></li>
+        </ul>
+    </nav>
+
+    <div class="container">
+        <section id="home" class="hero">
+            <div class="orb" style="top: -100px; left: -100px;"></div>
+            <div class="orb" style="bottom: -100px; right: -100px;"></div>
+            <h1>未知の解放</h1>
+            <p class="subtitle">魔術された天球の音楽</p>
+            <p class="subtitle second">Cosmic Sonification</p>
+            </section>
+
+        <section id="about">
+            <div class="content-section">
+                <h2>CONCEPT</h2>
+                <p>古代ギリシャで提唱された「天球の音楽」—— 天体の運行が奏でる壮大な宇宙の調べ。</p>
+                <p>目に見えない相互作用を可視化し、詩的な関係性を発見する魔術として、この理論を現代に蘇らせます。</p>
+                <p>未知なるものが持つ希望の力を通じて、あなたの世界観を拡張する体験をお届けします。</p>
+            </div>
+        </section>
+
+        <section id="exhibition">
+            <div class="content-section">
+                <h2>EXHIBITION INFO</h2>
+                <div class="info-grid">
+                    <div class="info-card">
+                        <h3>会期</h3>
+                        <p>2025年 7/29-8/2</p>
+                    </div>
+                    <div class="info-card">
+                        <h3>会場</h3>
+                        <p>東京・湯島｜<a href="https://phalanx2700.notion.site/introduction">湯島Phalanx</a></p>
+                    </div>
+                    <div class="info-card">
+                        <h3>入場料</h3>
+                        <p>詳細は後日発表</p>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <section id="process">
+            <div class="content-section">
+                <h2>制作過程</h2>
+                <p>天球の音楽理論を現代のテクノロジーで表現するため、音響・映像・空間演出を融合させた実験を重ねています。</p>
+                <p>儀式的な空間で、リズムと調和に合わせて物理的な挙動が変化する、魔術的な体験を創造します。</p>
+            </div>
+        </section>
+
+        <section id="whispers">
+            <div class="content-section">
+                <h2>魔女のつぶやき</h2>
+                <div class="witch-whispers">
+                    <div class="whisper-container">
+                        <div class="whisper-card">
+                            <p class="whisper-text">
+                                過去の偉人たちの思想や観念、詩的表現に魅せられて、私は、星と音と天球の未知なる世界で心地よく溺れている。この波は何色でしょう。どんな香りがするのでしょうか、人を写すほど穏やかでしょうか。
+                            </p>
+                            <p class="whisper-date">2025.07.15</p>
+                        </div>
+                        <div class="whisper-card">
+                            <p class="whisper-text">
+                                人の波を、じっくりと観察する。この人とはあまり言葉を交わさなくてもいいなとか、この人は間に関係を生む人なのかなとか…関係性を委ねるでもなく、自分が大きなものを持ってくるでもなく、共に作っていきたい。
+                            </p>
+                            <p class="whisper-date">2025.07.14</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <section id="artist">
+            <div class="content-section">
+                <h2>ARTIST</h2>
+                <div class="info-grid">
+                    <div class="info-card">
+                        <h3>自由の魔女エル | Liberty Witch EL</h3>
+                        <p>Experimental Art（実験的芸術）で世界の未知を解放し、魔術的な視点を提案している自由の魔女。魔術といった文化に救われた経験から、「未知」が持つ希望の虜となり、精神的なアート制作を始める。</p>
+                    </div>
+                    <div class="info-card">
+                        <h3>清水紘輔 | ksk432</h3>
+                        <p>筑波大学情報学群情報メディア創成学類在学。Human Computer Interaction/ Virtual Realityを中心とした研究活動に従事。</p>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+<section id="links">
+            <div class="content-section">
+                <h2>LINKS</h2>
+
+                <div style="text-align: center; margin-bottom: 60px;">
+                    <h3 style="font-weight: 300; letter-spacing: 3px; margin-bottom: 20px; font-size: 20px;">
+                        クラウドファンディング実施中
+                    </h3>
+                    <a href="https://camp-fire.jp/projects/777134/view" class="link-button" target="_blank" rel="noopener noreferrer" style="background: rgba(255, 255, 255, 0.1); border-color: rgba(255, 255, 255, 0.8);">
+                        プロジェクトページへ
+                    </a>
+                </div>
+                
+                <div class="links">
+                    <a href="https://note.com/tasty_cosmos44/" class="link-button" target="_blank" rel="noopener noreferrer">Note</a>
+                    <a href="https://www.instagram.com/ellllly_arts/" class="link-button" target="_blank" rel="noopener noreferrer">Instagram</a>
+                    <a href="https://x.com/ElyMagick" class="link-button" target="_blank" rel="noopener noreferrer">Twitter</a>
+                </div>
+
+                <div style="text-align: center; margin-top: 60px;">
+                    <p style="font-size: 16px; letter-spacing: 2px; margin-bottom: 20px; color: rgba(255, 255, 255, 0.6);">
+                        Supported By ASHIBA Creative Award
+                    </p>
+                    <div class="links" style="justify-content: center;">
+                         <a href="https://incubation.asiba.or.jp/" class="link-button" target="_blank" rel="noopener noreferrer">ASHIBA Incubation</a>
+                         <a href="https://incubation.asiba.or.jp/player/el" class="link-button" target="_blank" rel="noopener noreferrer">Player Page (EL)</a>
+                    </div>
+                </div>
+            </div>
+        </section>
+    </div>
+
+    <div class="sound-control" id="soundControl">
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" id="soundIcon">
+            <path d="M3 9v6h4l5 5V4L7 9H3zm13.5 3c0-1.77-1.02-3.29-2.5-4.03v8.05c1.48-.73 2.5-2.25 2.5-4.02zM14 3.23v2.06c2.89.86 5 3.54 5 6.71s-2.11 5.85-5 6.71v2.06c4.01-.91 7-4.49 7-8.77s-2.99-7.86-7-8.77z"/>
+        </svg>
+    </div>
+    
+    <script>
+        // Web Audio API - Ambient Sound
+        let audioContext;
+        let isPlaying = false;
+        let masterGain;
+        let oscillators = [];
+        let lfos = [];
+
+        function initAudio() {
+            audioContext = new (window.AudioContext || window.webkitAudioContext)();
+            masterGain = audioContext.createGain();
+            masterGain.gain.value = 0.15; // Volume control
+            masterGain.connect(audioContext.destination);
+
+            // Create ambient drone sounds
+            const frequencies = [110, 165, 220, 330]; // Base frequencies for cosmic drone
+            
+            frequencies.forEach((freq, index) => {
+                // Main oscillator
+                const osc = audioContext.createOscillator();
+                const oscGain = audioContext.createGain();
+                
+                osc.frequency.value = freq;
+                osc.type = 'sine';
+                oscGain.gain.value = 0.1;
+                
+                // LFO for subtle modulation
+                const lfo = audioContext.createOscillator();
+                const lfoGain = audioContext.createGain();
+                
+                lfo.frequency.value = 0.1 + (index * 0.05); // Very slow modulation
+                lfoGain.gain.value = freq * 0.01; // Subtle pitch variation
+                
+                lfo.connect(lfoGain);
+                lfoGain.connect(osc.frequency);
+                
+                // Add some filtering for warmth
+                const filter = audioContext.createBiquadFilter();
+                filter.type = 'lowpass';
+                filter.frequency.value = 800 + (index * 200);
+                filter.Q.value = 1;
+                
+                osc.connect(filter);
+                filter.connect(oscGain);
+                oscGain.connect(masterGain);
+                
+                oscillators.push({ osc, gain: oscGain });
+                lfos.push(lfo);
+            });
+        }
+
+        function startAudio() {
+            if (!audioContext) {
+                initAudio();
+            }
+            
+            if (audioContext.state === 'suspended') {
+                audioContext.resume();
+            }
+            
+            oscillators.forEach(({ osc }, index) => {
+                osc.start();
+                lfos[index].start();
+            });
+            
+            // Fade in
+            masterGain.gain.setValueAtTime(0, audioContext.currentTime);
+            masterGain.gain.linearRampToValueAtTime(0.15, audioContext.currentTime + 2);
+            
+            isPlaying = true;
+        }
+
+        function toggleSound() {
+            const soundIcon = document.getElementById('soundIcon');
+            
+            if (!isPlaying) {
+                startAudio();
+                soundIcon.innerHTML = '<path d="M3 9v6h4l5 5V4L7 9H3zm13.5 3c0-1.77-1.02-3.29-2.5-4.03v8.05c1.48-.73 2.5-2.25 2.5-4.02zM14 3.23v2.06c2.89.86 5 3.54 5 6.71s-2.11 5.85-5 6.71v2.06c4.01-.91 7-4.49 7-8.77s-2.99-7.86-7-8.77z"/>';
+            } else {
+                if (masterGain) {
+                    masterGain.gain.linearRampToValueAtTime(0, audioContext.currentTime + 1);
+                }
+                soundIcon.innerHTML = '<path d="M16.5 12c0-1.77-1.02-3.29-2.5-4.03v2.21l2.45 2.45c.03-.2.05-.41.05-.63zm2.5 0c0 .94-.2 1.82-.54 2.64l1.51 1.51C20.63 14.91 21 13.5 21 12c0-4.28-2.99-7.86-7-8.77v2.06c2.89.86 5 3.54 5 6.71zM4.27 3L3 4.27 7.73 9H3v6h4l5 5v-6.73l4.25 4.25c-.67.52-1.42.93-2.25 1.18v2.06c1.38-.31 2.63-.95 3.69-1.81L19.73 21 21 19.73l-9-9L4.27 3zM12 4L9.91 6.09 12 8.18V4z"/>';
+                isPlaying = false;
+            }
+        }
+
+        // Sound Control Button
+        document.getElementById('soundControl').addEventListener('click', toggleSound);
+
+        // Auto-start audio after loader
+        window.addEventListener('load', () => {
+            setTimeout(() => {
+                document.getElementById('loader').classList.add('hidden');
+                // Start ambient sound automatically
+                setTimeout(() => {
+                    startAudio();
+                    // --- START: ランダムな波紋を生成する処理を開始 ---
+                    spawnRandomRipple(); 
+                    // --- END: ランダムな波紋を生成する処理を開始 ---
+                }, 500);
+            }, 3000); // Increased loader time to read poem
+        });
+
+        // Custom Cursor
+        const cursor = document.querySelector('.cursor');
+        const cursorFollower = document.querySelector('.cursor-follower');
+
+        document.addEventListener('mousemove', (e) => {
+            cursor.style.left = e.clientX + 'px';
+            cursor.style.top = e.clientY + 'px';
+            
+            setTimeout(() => {
+                cursorFollower.style.left = e.clientX + 'px';
+                cursorFollower.style.top = e.clientY + 'px';
+            }, 100);
+        });
+
+        // --- START: 波紋を生成する関数 ---
+        // 波紋生成ロジックを再利用可能な関数にまとめる
+        function createRipple(x, y) {
+            const ripple = document.createElement('div');
+            ripple.className = 'ripple';
+            // 波紋の中心が指定した座標になるように調整
+            ripple.style.left = x + 'px';
+            ripple.style.top = y + 'px';
+            ripple.style.width = '20px';
+            ripple.style.height = '20px';
+            // transform-originが中心なので、座標をオフセットする
+            ripple.style.transform = 'translate(-50%, -50%) scale(0)';
+            document.body.appendChild(ripple);
+            
+            setTimeout(() => {
+                ripple.remove();
+            }, 4000); // アニメーション時間と一致させる
+        }
+
+        // クリック時に波紋を生成
+        document.addEventListener('click', (e) => {
+            createRipple(e.clientX, e.clientY);
+        });
+
+        // ランダムな位置に波紋を繰り返し生成する関数
+        function spawnRandomRipple() {
+            const x = Math.random() * window.innerWidth;
+            const y = Math.random() * window.innerHeight;
+            createRipple(x, y);
+
+            // 次の波紋をランダムな時間差（2〜7秒）で生成
+            const randomDelay = Math.random() * 5000 + 2000;
+            setTimeout(spawnRandomRipple, randomDelay);
+        }
+        // --- END: 波紋を生成する関数 ---
+
+        // Navbar Scroll Effect
+        window.addEventListener('scroll', () => {
+            const navbar = document.getElementById('navbar');
+            if (window.scrollY > 50) {
+                navbar.classList.add('scrolled');
+            } else {
+                navbar.classList.remove('scrolled');
+            }
+        });
+
+        // Cosmic Canvas Animation
+        const canvas = document.getElementById('cosmicCanvas');
+        const ctx = canvas.getContext('2d');
+        
+        canvas.width = window.innerWidth;
+        canvas.height = window.innerHeight;
+
+        window.addEventListener('resize', () => {
+            canvas.width = window.innerWidth;
+            canvas.height = window.innerHeight;
+        });
+
+        // Particles
+        const particles = [];
+        const particleCount = 100;
+
+        class Particle {
+            constructor() {
+                this.x = Math.random() * canvas.width;
+                this.y = Math.random() * canvas.height;
+                this.size = Math.random() * 2;
+                this.speedX = (Math.random() - 0.5) * 0.5;
+                this.speedY = (Math.random() - 0.5) * 0.5;
+                this.opacity = Math.random() * 0.5 + 0.5;
+            }
+
+            update() {
+                this.x += this.speedX;
+                this.y += this.speedY;
+
+                if (this.x > canvas.width) this.x = 0;
+                if (this.x < 0) this.x = canvas.width;
+                if (this.y > canvas.height) this.y = 0;
+                if (this.y < 0) this.y = canvas.height;
+            }
+
+            draw() {
+                ctx.fillStyle = `rgba(255, 255, 255, ${this.opacity})`;
+                ctx.beginPath();
+                ctx.arc(this.x, this.y, this.size, 0, Math.PI * 2);
+                ctx.fill();
+            }
+        }
+
+        // Create particles
+        for (let i = 0; i < particleCount; i++) {
+            particles.push(new Particle());
+        }
+
+        // Connection lines
+        function drawConnections() {
+            for (let i = 0; i < particles.length; i++) {
+                for (let j = i + 1; j < particles.length; j++) {
+                    const dx = particles[i].x - particles[j].x;
+                    const dy = particles[i].y - particles[j].y;
+                    const distance = Math.sqrt(dx * dx + dy * dy);
+
+                    if (distance < 150) {
+                        ctx.strokeStyle = `rgba(255, 255, 255, ${0.1 * (1 - distance / 150)})`;
+                        ctx.lineWidth = 0.5;
+                        ctx.beginPath();
+                        ctx.moveTo(particles[i].x, particles[i].y);
+                        ctx.lineTo(particles[j].x, particles[j].y);
+                        ctx.stroke();
+                    }
+                }
+            }
+        }
+
+        // Animation loop
+        function animate() {
+            ctx.clearRect(0, 0, canvas.width, canvas.height);
+
+            particles.forEach(particle => {
+                particle.update();
+                particle.draw();
+            });
+
+            drawConnections();
+            requestAnimationFrame(animate);
+        }
+
+        animate();
+
+        // Intersection Observer for content sections
+        const observerOptions = {
+            threshold: 0.1,
+            rootMargin: '0px 0px -100px 0px'
+        };
+
+        const observer = new IntersectionObserver((entries) => {
+            entries.forEach(entry => {
+                if (entry.isIntersecting) {
+                    entry.target.classList.add('visible');
+                }
+            });
+        }, observerOptions);
+
+        document.querySelectorAll('.content-section').forEach(section => {
+            observer.observe(section);
+        });
+
+        // Smooth Scroll
+        document.querySelectorAll('a[href^="#"]').forEach(anchor => {
+            anchor.addEventListener('click', function (e) {
+                e.preventDefault();
+                const target = document.querySelector(this.getAttribute('href'));
+                if (target) {
+                    target.scrollIntoView({
+                        behavior: 'smooth',
+                        block: 'start'
+                    });
+                }
+            });
+        });
+    </script>
+</body>
+</html>
